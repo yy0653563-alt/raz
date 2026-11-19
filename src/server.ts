@@ -48,7 +48,7 @@ app.get('/api/models', async (_req: Request, res: Response) => {
 });
 
 app.post('/api/chat', async (req: Request, res: Response) => {
-  const { message, history } = req.body as { message?: unknown; history?: unknown };
+  const { message, history, model } = req.body as { message?: unknown; history?: unknown; model?: unknown };
   if (typeof message !== 'string' || !message.trim() || message.length > 12_000) {
     res.status(400).json({ error: 'أرسل رسالة نصية لا تتجاوز ١٢٬٠٠٠ حرف.' });
     return;
@@ -57,6 +57,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     item && typeof item === 'object' && ['user', 'assistant'].includes(item.role) &&
     typeof item.content === 'string' && item.content.length <= 12_000))) {
     res.status(400).json({ error: 'سجل المحادثة غير صالح.' });
+    return;
+  }
+  if (model !== undefined && (typeof model !== 'string' || model.length > 200)) {
+    res.status(400).json({ error: 'اسم النموذج غير صالح.' });
     return;
   }
 
@@ -73,7 +77,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   }
 
   const preferred = workingModel && workingModel.expiresAt > Date.now() ? workingModel.model : undefined;
-  const candidates = [...new Set([preferred, ...available].filter((model): model is string => Boolean(model)))];
+  const requested = typeof model === 'string' && model ? model : undefined;
+  const candidates = [...new Set([requested, preferred, ...available].filter((model): model is string => typeof model === 'string' && model.length <= 200))];
   const messages = [
     ...(Array.isArray(history) ? history as Array<{ role: 'user' | 'assistant'; content: string }> : []),
     { role: 'user' as const, content: message.trim() },
@@ -111,6 +116,6 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   res.end();
 });
 
-app.get('*', (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+app.use((_req: Request, res: Response) => res.sendFile(path.join(publicDir, 'index.html')));
 
 app.listen(port, () => console.log(`راز يعمل على المنفذ ${port}`));
