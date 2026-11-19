@@ -366,21 +366,48 @@ async function consumeSse(response, onPayload) {
     }
   }
 }
+async function geminiError(response) {
+  let apiMessage = '';
+  try { apiMessage = (await response.json())?.error?.message || ''; } catch { }
+  if (response.status === 429) return 'تجاوزت حد الاستخدام المجاني مؤقتًا. انتظر قليلًا ثم حاول.';
+  const lower = apiMessage.toLowerCase();
+  if (apiMessage.includes('API key not valid') || lower.includes('api_key_invalid')) return 'مفتاح Gemini غير صالح. افحصه من زر 🔑 أعلى الصفحة.';
+  if (lower.includes('location') || lower.includes('region') || lower.includes('unsupported')) return 'Google لا توفّر خدمة Gemini API في منطقتك حاليًا. جرَّب اتصال VPN ثم أعِد المحاولة.';
+  return 'تعذّر الاتصال بخدمة Gemini (' + response.status + ').' + (apiMessage ? ' السبب: ' + apiMessage.slice(0, 180) : ' حاول مجددًا بعد لحظات.');
+}
+async function generateOnce(apiKey, model, body, signal) {
+  try {
+    const response = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!response.ok) return '';
+    const data = await response.json();
+    const parts = data?.candidates?.[0]?.content?.parts;
+    return Array.isArray(parts) ? parts.map((part) => part?.text || '').join('').trim() : '';
+  } catch { return ''; }
+}
 async function streamGemini(apiKey, model, history, message, signal, bump) {
   const contents = [...history, { role: 'user', content: message }].map((item) => ({
     role: item.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: item.content }],
   }));
-  const response = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`, {
-    method: 'POST', signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(systemInstruction() ? { contents, systemInstruction: { parts: [{ text: systemInstruction() }] } } : { contents }),
-  });
+  const body = systemInstruction() ? { contents, systemInstruction: { parts: [{ text: systemInstruction() }] } } : { contents };
+  const streamUrl = `${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+  let response = null;
+  try {
+    response = await fetch(streamUrl, { method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    const text = await generateOnce(apiKey, model, body, signal);
+    if (text) { bump(text); return; }
+    throw new Error('تعذّر الاتصال بخدمة Gemini. تحقّق من الإنترنت ثم حاول مجددًا.');
+  }
   if (!response.ok) {
-    const reason = response.status === 400 || response.status === 403 ? 'مفتاح Gemini غير صالح أو غير مفعل. تحقّق منه.'
-      : response.status === 429 ? 'تجاوزت حد الاستخدام المجاني مؤقتًا. انتظر قليلًا ثم حاول.'
-      : 'تعذّر الاتصال بخدمة Gemini. حاول مجددًا.';
-    throw new Error(reason);
+    if (response.status >= 500) {
+      const text = await generateOnce(apiKey, model, body, signal);
+      if (text) { bump(text); return; }
+    }
+    throw new Error(await geminiError(response));
   }
   await consumeSse(response, (data) => {
     const parts = data?.candidates?.[0]?.content?.parts;
