@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'raz.conversations.v1';
+const MODE_KEY = 'raz.mode.v1';
 const MODEL_KEY = 'raz.model.v1';
 const PROVIDER_KEY = 'raz.provider.v1';
 const KEY_STORES = { gemini: 'raz.gemini.key.v1', mistral: 'raz.mistral.key.v1' };
@@ -6,6 +7,13 @@ const MISTRAL_BASE = 'https://api.mistral.ai/v1';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const STATIC_MODE = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has('static');
 const MODEL_CHAIN = ['mistral-small-latest', 'mistral-medium-latest', 'open-mistral-nemo', 'pixtral-12b-2409'];
+const MODES = {
+  normal: { label: 'عادي', instruction: '' },
+  deep: { label: 'تفكير عميق', instruction: 'أنت "راز"، مساعد عربي يفكّر بعمق قبل الإجابة. ابدأ بقسم قصير بعنوان "🧠 تحليل" تفحص فيه السؤال من زوايا متعددة وتحدد ما هو حقًا مطلوب، ثم قدّم إجابة نهائية منظّمة بعناوين ونقاط قصيرة، واذكر البدائل والمخاطر إن وُجدت. اكتب بالفصحى البسيطة.' },
+  dev: { label: 'مبرمج', instruction: 'أنت "راز"، مبرمج خبير. أجب بالعربية مع الكود داخل مقاطع معلّمات التنسيق مع ذكر لغتها، واشرح أهم الأسطر، واذكر الأخطاء الشائعة وأفضل الممارسات. إذا كان السؤال عن مشكلة: حدد السبب الجذري أولًا ثم أعطِ الحل كاملًا قابلًا للنسخ والتشغيل.' },
+  simple: { label: 'شرح مبسط', instruction: 'أنت "راز"، معلّم صبور. اشرح أي فكرة بلغة عربية بسيطة جدًا للمبتدئين، مستخدمًا أمثلة من الحياة اليومية وخطوات مرقّمة. تجنّب المصطلحات المعقدة أو اشرحها فورًا، وفي النهاية اطرح سؤالًا صغيرًا للتأكد من الفهم.' },
+  creative: { label: 'كاتب', instruction: 'أنت "راز"، كاتب عربي مبدع. اكتب بنثرًا جميلًا غنيًا بالصور الفنية والتفاصيل الحسّية وبنبرة ودودة. اجعل طول الرد مناسبًا للطلب، وتابع خط الطلب الصريح للمستخدم.' },
+};
 const listEl = document.getElementById('conversationList');
 const messagesEl = document.getElementById('messages');
 const welcomeEl = document.getElementById('welcome');
@@ -21,7 +29,11 @@ let busy = false;
 let controller = null;
 let provider = localStorage.getItem(PROVIDER_KEY) || '';
 let chosenModel = localStorage.getItem(MODEL_KEY) || '';
+let mode = localStorage.getItem(MODE_KEY) || 'normal';
 let staticModels = [];
+let searchQuery = '';
+const convSearch = document.getElementById('convSearch');
+function systemInstruction() { return MODES[mode]?.instruction || ''; }
 
 function getKey(name) { return localStorage.getItem(KEY_STORES[name]) || ''; }
 function activeKey() { return getKey(provider); }
@@ -34,15 +46,20 @@ function id() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 function activeConversation() { return conversations.find((chat) => chat.id === activeId); }
 function renderSidebar() {
   listEl.replaceChildren();
-  conversations.forEach((chat) => {
+  const query = searchQuery.trim();
+  const visible = query ? conversations.filter((chat) => (chat.title || '').includes(query) || chat.messages.some((message) => (message.content || '').includes(query))) : conversations;
+  if (!visible.length) { const empty = document.createElement('div'); empty.className = 'conv-empty'; empty.textContent = query ? 'لا نتائج مطابقة' : 'لا محادثات بعد'; listEl.append(empty); return; }
+  visible.forEach((chat) => {
     const row = document.createElement('div'); row.className = `conversation-item${chat.id === activeId ? ' active' : ''}`;
     const icon = document.createElement('span'); icon.className = 'conversation-icon'; icon.textContent = '↳';
     const title = document.createElement('span'); title.className = 'conversation-title'; title.textContent = chat.title || 'محادثة جديدة';
+    const rename = document.createElement('button'); rename.className = 'rename-chat'; rename.type = 'button'; rename.title = 'إعادة تسمية'; rename.textContent = '✎';
+    rename.addEventListener('click', (event) => { event.stopPropagation(); const name = prompt('اسم المحادثة:', chat.title || 'محادثة جديدة'); if (name === null) return; chat.title = (name.trim() || chat.title || 'محادثة جديدة').slice(0, 60); save(); renderSidebar(); });
     const exp = document.createElement('button'); exp.className = 'export-chat'; exp.type = 'button'; exp.title = 'تصدير المحادثة (Markdown)'; exp.setAttribute('aria-label', 'تصدير المحادثة'); exp.textContent = '↓';
     exp.addEventListener('click', (event) => { event.stopPropagation(); exportConversation(chat); });
     const remove = document.createElement('button'); remove.className = 'delete-chat'; remove.type = 'button'; remove.setAttribute('aria-label', 'حذف المحادثة'); remove.textContent = '×';
     remove.addEventListener('click', (event) => { event.stopPropagation(); conversations = conversations.filter((item) => item.id !== chat.id); if (activeId === chat.id) activeId = null; save(); renderSidebar(); renderMessages(); });
-    row.append(icon, title, exp, remove); row.addEventListener('click', () => { activeId = chat.id; renderSidebar(); renderMessages(); closeSidebar(); }); listEl.append(row);
+    row.append(icon, title, rename, exp, remove); row.addEventListener('click', () => { activeId = chat.id; renderSidebar(); renderMessages(); closeSidebar(); }); listEl.append(row);
   });
 }
 function exportConversation(chat) {
@@ -65,10 +82,25 @@ function copyButton() {
   });
   return button;
 }
+function regenButton() {
+  const button = document.createElement('button'); button.className = 'copy-msg'; button.type = 'button'; button.textContent = '🔁 إعادة التوليد';
+  button.addEventListener('click', () => { if (!busy) regenerate(); });
+  return button;
+}
+function shareButton() {
+  const button = document.createElement('button'); button.className = 'copy-msg'; button.type = 'button'; button.textContent = 'مشاركة';
+  button.addEventListener('click', async () => {
+    const text = button.closest('.message-content')?.querySelector('.bubble')?.textContent ?? '';
+    try { await navigator.share({ title: 'راز', text }); } catch { return; }
+  });
+  return button;
+}
 function appendMeta(wrap, model) {
   const meta = document.createElement('div'); meta.className = 'message-meta';
   if (model) { const tag = document.createElement('span'); tag.className = 'model-tag'; tag.textContent = model; meta.append('أجابك النموذج', tag); }
-  meta.append(copyButton()); wrap.append(meta);
+  meta.append(copyButton(), regenButton());
+  if (navigator.share) meta.append(shareButton());
+  wrap.append(meta);
 }
 function renderMessages() {
   const chat = activeConversation(); messagesEl.replaceChildren();
@@ -124,7 +156,9 @@ async function streamGemini(apiKey, model, history, message, signal, bump) {
     parts: [{ text: item.content }],
   }));
   const response = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`, {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }),
+    method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(systemInstruction() ? { contents, systemInstruction: { parts: [{ text: systemInstruction() }] } } : { contents }),
   });
   if (!response.ok) {
     const reason = response.status === 400 || response.status === 403 ? 'مفتاح Gemini غير صالح أو غير مفعل. تحقّق منه.'
@@ -141,7 +175,7 @@ async function streamMistral(apiKey, model, history, message, signal, bump) {
   const response = await fetch(`${MISTRAL_BASE}/chat/completions`, {
     method: 'POST', signal,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, messages: [...history, { role: 'user', content: message }], stream: true }),
+    body: JSON.stringify({ model, messages: [...(systemInstruction() ? [{ role: 'system', content: systemInstruction() }] : []), ...history, { role: 'user', content: message }], stream: true }),
   });
   if (!response.ok) {
     const reason = response.status === 401 ? 'مفتاح Mistral غير صالح. تحقّق منه ثم أعده الإدخال.'
@@ -159,7 +193,20 @@ async function sendMessage(text) {
   const message = text.trim(); if (!message || busy) return;
   if (STATIC_MODE && !activeKey()) { openKeyDialog(); return; }
   const chat = ensureConversation(message);
-  chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages(); addTyping(); setBusy(true); input.value = ''; updateCount();
+  chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages();
+  await respond(chat);
+}
+async function regenerate() {
+  const chat = activeConversation(); if (!chat || busy) return;
+  while (chat.messages.length && chat.messages[chat.messages.length - 1].role === 'assistant') chat.messages.pop();
+  save(); renderSidebar(); renderMessages();
+  if (!chat.messages.length) return;
+  await respond(chat);
+}
+async function respond(chat) {
+  const message = chat.messages[chat.messages.length - 1]?.content;
+  if (!message) return;
+  addTyping(); setBusy(true); input.value = ''; updateCount();
   const history = chat.messages.slice(0, -1).slice(-20).map(({ role, content }) => ({ role, content }));
   controller = new AbortController();
   let assistant = null; let fullText = ''; let answeredModel = '';
@@ -248,6 +295,9 @@ function initKeyDialog() {
   });
 }
 document.getElementById('newChat').addEventListener('click', startNewChat);
+document.getElementById('navHistory')?.addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('visible'); });
+document.getElementById('navNew')?.addEventListener('click', startNewChat);
+document.getElementById('navWrite')?.addEventListener('click', () => { closeSidebar(); input.focus(); });
 document.getElementById('openSidebar').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('visible'); });
 document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
 document.getElementById('scrim').addEventListener('click', closeSidebar);
@@ -258,6 +308,9 @@ input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !eve
 document.querySelectorAll('.suggestion').forEach((button) => button.addEventListener('click', () => sendMessage(button.dataset.prompt || '')));
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); startNewChat(); } });
 modelSelect.addEventListener('change', () => { chosenModel = modelSelect.value; localStorage.setItem(MODEL_KEY, chosenModel); });
+document.getElementById('modeSelect')?.addEventListener('change', (event) => { mode = event.target.value; localStorage.setItem(MODE_KEY, mode); });
+if (convSearch) convSearch.addEventListener('input', () => { searchQuery = convSearch.value; renderSidebar(); });
+document.getElementById('modeSelect').value = MODES[mode] ? mode : 'normal';
 function fillModelSelect(models, preferred, placeholder) {
   modelSelect.replaceChildren();
   if (!models.length) { const option = document.createElement('option'); option.value = ''; option.textContent = placeholder; modelSelect.append(option); return; }

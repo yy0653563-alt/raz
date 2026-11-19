@@ -70,6 +70,68 @@ h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
 .model-pill{border-radius:8px}
 .chat-scroll{scroll-behavior:smooth}
 ::selection{background:rgba(0,230,118,.3)}
+/* ===== ثيم واضح مستوحى من Whacka (v5) ===== */
+:root{--green:#8b5cf6;--green-dim:#3b2a63}
+body{background:radial-gradient(1100px 650px at 50% -15%,rgba(139,92,246,.16),transparent 60%),#0a0a0c}
+@keyframes brandGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(139,92,246,.45))}50%{filter:drop-shadow(0 0 14px rgba(139,92,246,.8))}}
+h1{background:linear-gradient(180deg,#ffffff 25%,#d8c9ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h1 em{-webkit-text-fill-color:#a78bfa}
+.eyebrow{color:#8f8fa0;font-size:12px}
+.eyebrow span{background:#8b5cf6}
+.welcome>p{color:#9a9aac;font-size:14px}
+.suggestion{background:#141419;border:1px solid #23232b;border-radius:16px;min-height:64px;font-size:13px;color:#c9c9d4;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.suggestion:hover{background:#1a1822;border-color:#4c3a80;color:#ede7ff;box-shadow:0 10px 26px rgba(139,92,246,.18)}
+.suggestion-icon{color:#a78bfa;order:0}
+.welcome-foot{color:#5c5c6b}
+.foot-rule{background:#25252d}
+.welcome{max-width:620px}
+.composer{background:#121216;border:1px solid #26262e;border-radius:20px;box-shadow:0 16px 44px rgba(0,0,0,.5)}
+.composer:focus-within{border-color:#6d51c4;box-shadow:0 0 0 3px rgba(139,92,246,.12),0 16px 44px rgba(0,0,0,.5)}
+.composer textarea{font-size:15px}
+.send-button{width:44px;height:42px;border-radius:50%;background:linear-gradient(180deg,#9d6bff,#7847f5);box-shadow:0 5px 18px rgba(139,92,246,.45);color:#fff}
+.send-button:hover{background:linear-gradient(180deg,#af85ff,#875cf9);box-shadow:0 7px 24px rgba(139,92,246,.6)}
+.send-button svg{stroke-width:2}
+.new-chat{background:linear-gradient(180deg,rgba(139,92,246,.14),rgba(139,92,246,.04));border-color:#3a2d5c;color:#d9cdfb;border-radius:12px}
+.new-chat:hover{border-color:#8b5cf6;background:rgba(139,92,246,.12)}
+.new-chat kbd{color:#8f83b3;border-color:#2e2a3f;background:none}
+.plus{color:#a78bfa}
+.conversation-item.active,.conversation-item:hover{background:#16161c;color:#fff}
+.sidebar{background:#0c0c0f;border-left:1px solid #1c1c22}
+.topbar{background:rgba(10,10,12,.75);border-bottom:1px solid rgba(255,255,255,.05)}
+.model-pill{background:#131318;border-color:#26262e;color:#a8a8b8;border-radius:10px;padding:8px 11px}
+.model-indicator{background:#8b5cf6;box-shadow:0 0 8px rgba(139,92,246,.6)}
+.status-dot{background:#e2af45}
+.status-dot.online{background:#8b5cf6;box-shadow:0 0 9px rgba(139,92,246,.6)}
+.avatar{background:#16121f;border-color:#4c3a80;color:#a78bfa;border-radius:10px;box-shadow:0 0 12px rgba(139,92,246,.15)}
+.user .avatar{background:#191922;border-color:#30303a;color:#b9b9c6}
+.message-row.user .bubble{background:#1b1530;border-color:#4c3384;color:#ece6ff;border-radius:18px 18px 6px 18px}
+.message-row.assistant .bubble{background:#141419;border-color:#232329;color:#dcdce4;border-radius:18px 18px 18px 6px;font-size:14px;line-height:2}
+.model-tag{color:#9d8bd0}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:6;background:rgba(11,11,14,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid #1e1e25;padding:8px 10px 12px;justify-content:space-around}
+.mobile-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:#8f8fa0;font-size:11px;cursor:pointer;padding:2px 14px;border-radius:10px}
+.nav-ico{font-size:18px;line-height:1}
+.nav-new{color:#efe9ff}
+.nav-new .nav-ico{width:38px;height:38px;display:grid;place-items:center;background:linear-gradient(180deg,#9d6bff,#7847f5);color:#fff;border-radius:50%;font-size:22px;box-shadow:0 4px 16px rgba(139,92,246,.5)}
+@media(max-width:760px){.mobile-nav{display:flex}.composer-area{padding-bottom:78px}.main-panel{border-bottom:69px solid transparent}.welcome{padding-bottom:20px}}
+
+/* ===== قدرات v6 ===== */
+.conv-search{width:calc(100% - 8px);margin:0 4px 4px;border:1px solid #202722;background:#0a0d0b;color:var(--white);border-radius:6px;padding:8px 10px;font:12px var(--font);outline:0;transition:border-color .2s}
+.conv-search:focus{border-color:#336344}
+.conv-search::placeholder{color:#5f6760}
+.conv-search::-webkit-search-cancel-button{filter:invert(.6)}
+.conv-empty{padding:12px 9px;color:#5f6760;font-size:11px;text-align:center}
+.rename-chat{border:0;background:none;color:#707a72;cursor:pointer;opacity:0;font-size:13px;padding:0 2px;transition:.15s}
+.conversation-item:hover .rename-chat{opacity:1}
+.rename-chat:hover{color:var(--green)}
+.composer-left{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.composer-left .model-pill{flex-shrink:0}
+.composer-left .model-pill select{max-width:120px}
+@media(max-width:760px){
+  .composer-hint{display:none}
+  .composer-left{flex:1}
+  .composer-left .model-pill select{max-width:96px}
+  .conv-search{padding:7px 9px}
+}
 
 </style>
 </head>
@@ -84,15 +146,21 @@ h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
         <button class="icon-button mobile-close" id="closeSidebar" aria-label="إغلاق القائمة">×</button>
       </div>
       <button class="new-chat" id="newChat"><span class="plus">＋</span> محادثة جديدة <kbd>⌘ K</kbd></button>
+      <input type="search" id="convSearch" class="conv-search" placeholder="بحث في المحادثات…" aria-label="بحث في المحادثات">
       <div class="sidebar-label"><span>مساحتك</span><span class="tiny-line"></span></div>
       <div class="conversation-list" id="conversationList"></div>
       <div class="sidebar-bottom">
         <button class="key-edit" id="keyEdit" type="button">🔑 إدارة المفتاح</button>
         <div class="connection"><span class="status-dot"></span><span id="connectionText">جاري الاتصال</span></div>
-        <div class="side-foot"><span>خصوصيتك أولاً</span><span class="version">R / 01</span></div>
+        <div class="side-foot"><span>خصوصيتك أولاً</span><span class="version">R / 02</span></div>
       </div>
     </aside>
     <div class="sidebar-scrim" id="scrim"></div>
+    <nav class="mobile-nav" id="mobileNav">
+      <button type="button" id="navHistory"><span class="nav-ico">🕘</span><span>المحفوظات</span></button>
+      <button type="button" class="nav-new" id="navNew"><span class="nav-ico">＋</span><span>جديدة</span></button>
+      <button type="button" id="navWrite"><span class="nav-ico">✍️</span><span>اكتب</span></button>
+    </nav>
     <main class="main-panel">
       <header class="topbar">
         <button class="icon-button menu-button" id="openSidebar" aria-label="فتح القائمة"><span></span><span></span></button>
@@ -103,7 +171,7 @@ h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
       <section class="chat-scroll" id="chatScroll">
         <div class="welcome" id="welcome">
           <div class="welcome-mark"><svg viewBox="0 0 42 32" aria-hidden="true"><path d="M2 16C7.2 7.6 13.5 3.5 21 3.5S34.8 7.6 40 16c-5.2 8.4-11.5 12.5-19 12.5S7.2 24.4 2 16Z"/><path d="M21 7.8 29.2 16 21 24.2 12.8 16 21 7.8Z"/><circle cx="21" cy="16" r="3"/></svg></div>
-          <div class="eyebrow"><span></span> مساحة آمنة لأفكارك</div>
+          <div class="eyebrow"><span></span> استوديو الذكاء الاصطناعي</div>
           <h1>فكرتك تبدأ<br>من <em>هنا.</em></h1>
           <p>اسأل، استكشف، أو ابدأ من حيث توقفت.<br>راز هنا ليساعدك على التفكير بشكل أعمق.</p>
           <div class="suggestions">
@@ -119,7 +187,10 @@ h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
         <form class="composer" id="chatForm">
           <textarea id="messageInput" rows="1" placeholder="اكتب ما يدور في ذهنك..." aria-label="رسالتك" maxlength="12000"></textarea>
           <div class="composer-bottom">
-            <div class="composer-hint"><span class="hint-spark">✳</span> خذ وقتك، لا يوجد سؤال خاطئ</div>
+            <div class="composer-left">
+              <label class="model-pill" for="modeSelect" title="نمط الرد"><select id="modeSelect" aria-label="نمط الرد"><option value="normal">عادي</option><option value="deep">تفكير عميق</option><option value="dev">مبرمج</option><option value="simple">شرح مبسط</option><option value="creative">كاتب</option></select></label>
+              <div class="composer-hint"><span class="hint-spark">✳</span> خذ وقتك، لا يوجد سؤال خاطئ</div>
+            </div>
             <div class="send-group"><span class="char-count" id="charCount"></span><button class="send-button" id="sendButton" type="submit" aria-label="إرسال الرسالة"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button></div>
           </div>
         </form>
@@ -144,6 +215,7 @@ h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
   </div>
   <script>
 const STORAGE_KEY = 'raz.conversations.v1';
+const MODE_KEY = 'raz.mode.v1';
 const MODEL_KEY = 'raz.model.v1';
 const PROVIDER_KEY = 'raz.provider.v1';
 const KEY_STORES = { gemini: 'raz.gemini.key.v1', mistral: 'raz.mistral.key.v1' };
@@ -151,6 +223,13 @@ const MISTRAL_BASE = 'https://api.mistral.ai/v1';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const STATIC_MODE = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has('static');
 const MODEL_CHAIN = ['mistral-small-latest', 'mistral-medium-latest', 'open-mistral-nemo', 'pixtral-12b-2409'];
+const MODES = {
+  normal: { label: 'عادي', instruction: '' },
+  deep: { label: 'تفكير عميق', instruction: 'أنت "راز"، مساعد عربي يفكّر بعمق قبل الإجابة. ابدأ بقسم قصير بعنوان "🧠 تحليل" تفحص فيه السؤال من زوايا متعددة وتحدد ما هو حقًا مطلوب، ثم قدّم إجابة نهائية منظّمة بعناوين ونقاط قصيرة، واذكر البدائل والمخاطر إن وُجدت. اكتب بالفصحى البسيطة.' },
+  dev: { label: 'مبرمج', instruction: 'أنت "راز"، مبرمج خبير. أجب بالعربية مع الكود داخل مقاطع معلّمات التنسيق مع ذكر لغتها، واشرح أهم الأسطر، واذكر الأخطاء الشائعة وأفضل الممارسات. إذا كان السؤال عن مشكلة: حدد السبب الجذري أولًا ثم أعطِ الحل كاملًا قابلًا للنسخ والتشغيل.' },
+  simple: { label: 'شرح مبسط', instruction: 'أنت "راز"، معلّم صبور. اشرح أي فكرة بلغة عربية بسيطة جدًا للمبتدئين، مستخدمًا أمثلة من الحياة اليومية وخطوات مرقّمة. تجنّب المصطلحات المعقدة أو اشرحها فورًا، وفي النهاية اطرح سؤالًا صغيرًا للتأكد من الفهم.' },
+  creative: { label: 'كاتب', instruction: 'أنت "راز"، كاتب عربي مبدع. اكتب بنثرًا جميلًا غنيًا بالصور الفنية والتفاصيل الحسّية وبنبرة ودودة. اجعل طول الرد مناسبًا للطلب، وتابع خط الطلب الصريح للمستخدم.' },
+};
 const listEl = document.getElementById('conversationList');
 const messagesEl = document.getElementById('messages');
 const welcomeEl = document.getElementById('welcome');
@@ -166,7 +245,11 @@ let busy = false;
 let controller = null;
 let provider = localStorage.getItem(PROVIDER_KEY) || '';
 let chosenModel = localStorage.getItem(MODEL_KEY) || '';
+let mode = localStorage.getItem(MODE_KEY) || 'normal';
 let staticModels = [];
+let searchQuery = '';
+const convSearch = document.getElementById('convSearch');
+function systemInstruction() { return MODES[mode]?.instruction || ''; }
 
 function getKey(name) { return localStorage.getItem(KEY_STORES[name]) || ''; }
 function activeKey() { return getKey(provider); }
@@ -179,15 +262,20 @@ function id() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 function activeConversation() { return conversations.find((chat) => chat.id === activeId); }
 function renderSidebar() {
   listEl.replaceChildren();
-  conversations.forEach((chat) => {
+  const query = searchQuery.trim();
+  const visible = query ? conversations.filter((chat) => (chat.title || '').includes(query) || chat.messages.some((message) => (message.content || '').includes(query))) : conversations;
+  if (!visible.length) { const empty = document.createElement('div'); empty.className = 'conv-empty'; empty.textContent = query ? 'لا نتائج مطابقة' : 'لا محادثات بعد'; listEl.append(empty); return; }
+  visible.forEach((chat) => {
     const row = document.createElement('div'); row.className = `conversation-item${chat.id === activeId ? ' active' : ''}`;
     const icon = document.createElement('span'); icon.className = 'conversation-icon'; icon.textContent = '↳';
     const title = document.createElement('span'); title.className = 'conversation-title'; title.textContent = chat.title || 'محادثة جديدة';
+    const rename = document.createElement('button'); rename.className = 'rename-chat'; rename.type = 'button'; rename.title = 'إعادة تسمية'; rename.textContent = '✎';
+    rename.addEventListener('click', (event) => { event.stopPropagation(); const name = prompt('اسم المحادثة:', chat.title || 'محادثة جديدة'); if (name === null) return; chat.title = (name.trim() || chat.title || 'محادثة جديدة').slice(0, 60); save(); renderSidebar(); });
     const exp = document.createElement('button'); exp.className = 'export-chat'; exp.type = 'button'; exp.title = 'تصدير المحادثة (Markdown)'; exp.setAttribute('aria-label', 'تصدير المحادثة'); exp.textContent = '↓';
     exp.addEventListener('click', (event) => { event.stopPropagation(); exportConversation(chat); });
     const remove = document.createElement('button'); remove.className = 'delete-chat'; remove.type = 'button'; remove.setAttribute('aria-label', 'حذف المحادثة'); remove.textContent = '×';
     remove.addEventListener('click', (event) => { event.stopPropagation(); conversations = conversations.filter((item) => item.id !== chat.id); if (activeId === chat.id) activeId = null; save(); renderSidebar(); renderMessages(); });
-    row.append(icon, title, exp, remove); row.addEventListener('click', () => { activeId = chat.id; renderSidebar(); renderMessages(); closeSidebar(); }); listEl.append(row);
+    row.append(icon, title, rename, exp, remove); row.addEventListener('click', () => { activeId = chat.id; renderSidebar(); renderMessages(); closeSidebar(); }); listEl.append(row);
   });
 }
 function exportConversation(chat) {
@@ -210,10 +298,25 @@ function copyButton() {
   });
   return button;
 }
+function regenButton() {
+  const button = document.createElement('button'); button.className = 'copy-msg'; button.type = 'button'; button.textContent = '🔁 إعادة التوليد';
+  button.addEventListener('click', () => { if (!busy) regenerate(); });
+  return button;
+}
+function shareButton() {
+  const button = document.createElement('button'); button.className = 'copy-msg'; button.type = 'button'; button.textContent = 'مشاركة';
+  button.addEventListener('click', async () => {
+    const text = button.closest('.message-content')?.querySelector('.bubble')?.textContent ?? '';
+    try { await navigator.share({ title: 'راز', text }); } catch { return; }
+  });
+  return button;
+}
 function appendMeta(wrap, model) {
   const meta = document.createElement('div'); meta.className = 'message-meta';
   if (model) { const tag = document.createElement('span'); tag.className = 'model-tag'; tag.textContent = model; meta.append('أجابك النموذج', tag); }
-  meta.append(copyButton()); wrap.append(meta);
+  meta.append(copyButton(), regenButton());
+  if (navigator.share) meta.append(shareButton());
+  wrap.append(meta);
 }
 function renderMessages() {
   const chat = activeConversation(); messagesEl.replaceChildren();
@@ -269,7 +372,9 @@ async function streamGemini(apiKey, model, history, message, signal, bump) {
     parts: [{ text: item.content }],
   }));
   const response = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`, {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }),
+    method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(systemInstruction() ? { contents, systemInstruction: { parts: [{ text: systemInstruction() }] } } : { contents }),
   });
   if (!response.ok) {
     const reason = response.status === 400 || response.status === 403 ? 'مفتاح Gemini غير صالح أو غير مفعل. تحقّق منه.'
@@ -286,7 +391,7 @@ async function streamMistral(apiKey, model, history, message, signal, bump) {
   const response = await fetch(`${MISTRAL_BASE}/chat/completions`, {
     method: 'POST', signal,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, messages: [...history, { role: 'user', content: message }], stream: true }),
+    body: JSON.stringify({ model, messages: [...(systemInstruction() ? [{ role: 'system', content: systemInstruction() }] : []), ...history, { role: 'user', content: message }], stream: true }),
   });
   if (!response.ok) {
     const reason = response.status === 401 ? 'مفتاح Mistral غير صالح. تحقّق منه ثم أعده الإدخال.'
@@ -304,7 +409,20 @@ async function sendMessage(text) {
   const message = text.trim(); if (!message || busy) return;
   if (STATIC_MODE && !activeKey()) { openKeyDialog(); return; }
   const chat = ensureConversation(message);
-  chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages(); addTyping(); setBusy(true); input.value = ''; updateCount();
+  chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages();
+  await respond(chat);
+}
+async function regenerate() {
+  const chat = activeConversation(); if (!chat || busy) return;
+  while (chat.messages.length && chat.messages[chat.messages.length - 1].role === 'assistant') chat.messages.pop();
+  save(); renderSidebar(); renderMessages();
+  if (!chat.messages.length) return;
+  await respond(chat);
+}
+async function respond(chat) {
+  const message = chat.messages[chat.messages.length - 1]?.content;
+  if (!message) return;
+  addTyping(); setBusy(true); input.value = ''; updateCount();
   const history = chat.messages.slice(0, -1).slice(-20).map(({ role, content }) => ({ role, content }));
   controller = new AbortController();
   let assistant = null; let fullText = ''; let answeredModel = '';
@@ -393,6 +511,9 @@ function initKeyDialog() {
   });
 }
 document.getElementById('newChat').addEventListener('click', startNewChat);
+document.getElementById('navHistory')?.addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('visible'); });
+document.getElementById('navNew')?.addEventListener('click', startNewChat);
+document.getElementById('navWrite')?.addEventListener('click', () => { closeSidebar(); input.focus(); });
 document.getElementById('openSidebar').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('visible'); });
 document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
 document.getElementById('scrim').addEventListener('click', closeSidebar);
@@ -403,6 +524,9 @@ input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !eve
 document.querySelectorAll('.suggestion').forEach((button) => button.addEventListener('click', () => sendMessage(button.dataset.prompt || '')));
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); startNewChat(); } });
 modelSelect.addEventListener('change', () => { chosenModel = modelSelect.value; localStorage.setItem(MODEL_KEY, chosenModel); });
+document.getElementById('modeSelect')?.addEventListener('change', (event) => { mode = event.target.value; localStorage.setItem(MODE_KEY, mode); });
+if (convSearch) convSearch.addEventListener('input', () => { searchQuery = convSearch.value; renderSidebar(); });
+document.getElementById('modeSelect').value = MODES[mode] ? mode : 'normal';
 function fillModelSelect(models, preferred, placeholder) {
   modelSelect.replaceChildren();
   if (!models.length) { const option = document.createElement('option'); option.value = ''; option.textContent = placeholder; modelSelect.append(option); return; }
