@@ -1,7 +1,9 @@
 const STORAGE_KEY = 'raz.conversations.v1';
 const MODEL_KEY = 'raz.model.v1';
-const KEY_STORE = 'raz.mistral.key.v1';
+const PROVIDER_KEY = 'raz.provider.v1';
+const KEY_STORES = { gemini: 'raz.gemini.key.v1', mistral: 'raz.mistral.key.v1' };
 const MISTRAL_BASE = 'https://api.mistral.ai/v1';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const STATIC_MODE = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has('static');
 const MODEL_CHAIN = ['mistral-small-latest', 'mistral-medium-latest', 'open-mistral-nemo', 'pixtral-12b-2409'];
 const listEl = document.getElementById('conversationList');
@@ -17,10 +19,12 @@ let conversations = loadConversations();
 let activeId = null;
 let busy = false;
 let controller = null;
+let provider = localStorage.getItem(PROVIDER_KEY) || '';
 let chosenModel = localStorage.getItem(MODEL_KEY) || '';
-let apiKey = localStorage.getItem(KEY_STORE) || '';
 let staticModels = [];
 
+function getKey(name) { return localStorage.getItem(KEY_STORES[name]) || ''; }
+function activeKey() { return getKey(provider); }
 function loadConversations() {
   try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(saved) ? saved : []; }
   catch { return []; }
@@ -101,42 +105,70 @@ function ensureConversation(message) {
   if (!chat.messages.length) chat.title = message.trim().slice(0, 36) || 'محادثة جديدة';
   return chat;
 }
+async function consumeSse(response, onPayload) {
+  const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+  while (true) {
+    const { value, done } = await reader.read(); if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n'); buffer = lines.pop() || '';
+    for (const line of lines) {
+      const trimmed = line.trim(); if (!trimmed.startsWith('data:')) continue;
+      const payload = trimmed.slice(5).trim(); if (!payload || payload === '[DONE]') continue;
+      try { onPayload(JSON.parse(payload)); } catch { /* تجاهل الأجزاء غير المكتملة */ }
+    }
+  }
+}
+async function streamGemini(apiKey, model, history, message, signal, bump) {
+  const contents = [...history, { role: 'user', content: message }].map((item) => ({
+    role: item.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: item.content }],
+  }));
+  const response = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }),
+  });
+  if (!response.ok) {
+    const reason = response.status === 400 || response.status === 403 ? 'مفتاح Gemini غير صالح أو غير مفعل. تحقّق منه.'
+      : response.status === 429 ? 'تجاوزت حد الاستخدام المجاني مؤقتًا. انتظر قليلًا ثم حاول.'
+      : 'تعذّر الاتصال بخدمة Gemini. حاول مجددًا.';
+    throw new Error(reason);
+  }
+  await consumeSse(response, (data) => {
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (Array.isArray(parts)) bump(parts.map((part) => part?.text || '').join(''));
+  });
+}
+async function streamMistral(apiKey, model, history, message, signal, bump) {
+  const response = await fetch(`${MISTRAL_BASE}/chat/completions`, {
+    method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, messages: [...history, { role: 'user', content: message }], stream: true }),
+  });
+  if (!response.ok) {
+    const reason = response.status === 401 ? 'مفتاح Mistral غير صالح. تحقّق منه ثم أعده الإدخال.'
+      : response.status === 403 ? 'مفتاح Mistral غير مفعّل. فعّل خطتك في كونسول Mistral.'
+      : response.status === 429 ? 'تجاوزت حد الاستخدام مؤقتًا. حاول بعد قليل.'
+      : 'تعذّر الاتصال بخدمة Mistral. حاول مجددًا.';
+    throw new Error(reason);
+  }
+  await consumeSse(response, (data) => {
+    const delta = data?.choices?.[0]?.delta?.content;
+    if (typeof delta === 'string' && delta) bump(delta);
+  });
+}
 async function sendMessage(text) {
   const message = text.trim(); if (!message || busy) return;
-  if (STATIC_MODE && !apiKey) { openKeyDialog(); return; }
+  if (STATIC_MODE && !activeKey()) { openKeyDialog(); return; }
   const chat = ensureConversation(message);
   chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages(); addTyping(); setBusy(true); input.value = ''; updateCount();
   const history = chat.messages.slice(0, -1).slice(-20).map(({ role, content }) => ({ role, content }));
   controller = new AbortController();
   let assistant = null; let fullText = ''; let answeredModel = '';
-  const bump = (chunk) => { fullText += chunk; assistant.bubble.textContent = fullText; scrollBottom(); };
+  const bump = (chunk) => { if (!chunk) return; if (!assistant) { document.getElementById('typing')?.remove(); assistant = addMessage('assistant', ''); } fullText += chunk; assistant.bubble.textContent = fullText; scrollBottom(); };
   try {
     if (STATIC_MODE) {
-      answeredModel = chosenModel || staticModels[0] || 'mistral-small-latest';
-      document.getElementById('typing')?.remove();
-      assistant = addMessage('assistant', '');
-      const response = await fetch(`${MISTRAL_BASE}/chat/completions`, {
-        method: 'POST', signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: answeredModel, messages: [...history, { role: 'user', content: message }], stream: true }),
-      });
-      if (!response.ok) {
-        const reason = response.status === 401 ? 'مفتاح Mistral غير صالح. تحقّق منه ثم أعده الإدخال.'
-          : response.status === 429 ? 'تجاوزت حد الاستخدام مؤقتًا. حاول بعد قليل.'
-          : 'تعذّر الاتصال بخدمة Mistral. حاول مجددًا.';
-        throw new Error(reason);
-      }
-      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
-      while (true) {
-        const { value, done } = await reader.read(); if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n'); buffer = lines.pop() || '';
-        for (const line of lines) {
-          const trimmed = line.trim(); if (!trimmed.startsWith('data:')) continue;
-          const payload = trimmed.slice(5).trim(); if (payload === '[DONE]') continue;
-          try { const delta = JSON.parse(payload).choices?.[0]?.delta?.content; if (typeof delta === 'string' && delta) bump(delta); } catch { /* تجاهل الأجزاء غير المكتملة */ }
-        }
-      }
+      answeredModel = chosenModel || staticModels[0] || (provider === 'gemini' ? 'gemini-2.5-flash' : 'mistral-small-latest');
+      if (provider === 'gemini') await streamGemini(activeKey(), answeredModel, history, message, controller.signal, bump);
+      else await streamMistral(activeKey(), answeredModel, history, message, controller.signal, bump);
     } else {
       const response = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
@@ -144,8 +176,6 @@ async function sendMessage(text) {
       });
       if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'تعذّر إرسال رسالتك.'); }
       if (!response.body) throw new Error('الاتصال المباشر غير متاح في هذا المتصفح.');
-      document.getElementById('typing')?.remove();
-      assistant = addMessage('assistant', '');
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
       while (true) {
         const { value, done } = await reader.read(); if (done) break;
@@ -180,16 +210,30 @@ async function sendMessage(text) {
 }
 function updateCount() { countEl.textContent = input.value.length > 0 ? `${input.value.length}/12000` : ''; }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('scrim').classList.remove('visible'); }
-function openKeyDialog() { const overlay = document.getElementById('keyOverlay'); const field = document.getElementById('apiKeyInput'); field.value = apiKey; overlay.classList.add('visible'); field.focus(); }
+function openKeyDialog() {
+  const overlay = document.getElementById('keyOverlay');
+  document.getElementById('providerSelect').value = provider || 'gemini';
+  document.getElementById('apiKeyInput').value = activeKey();
+  updateKeyDialogHint();
+  overlay.classList.add('visible'); document.getElementById('apiKeyInput').focus();
+}
 function closeKeyDialog() { document.getElementById('keyOverlay').classList.remove('visible'); }
+function updateKeyDialogHint() {
+  const name = document.getElementById('providerSelect').value;
+  const hint = document.getElementById('keyHint');
+  if (name === 'gemini') hint.innerHTML = 'مفتاح مجاني بدون بطاقة من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. يُخزَّن في متصفحك فقط.';
+  else hint.innerHTML = 'يتطلب خطة Mistral مفعّلة. احصل عليه من <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener">console.mistral.ai</a>. يُخزَّن في متصفحك فقط.';
+}
 function initKeyDialog() {
   if (!STATIC_MODE) { document.getElementById('keyEdit').hidden = true; return; }
   document.getElementById('keyEdit').addEventListener('click', openKeyDialog);
   document.getElementById('keyCancel').addEventListener('click', closeKeyDialog);
   document.getElementById('keyOverlay').addEventListener('click', (event) => { if (event.target.id === 'keyOverlay') closeKeyDialog(); });
+  document.getElementById('providerSelect').addEventListener('change', () => { document.getElementById('apiKeyInput').value = getKey(document.getElementById('providerSelect').value) || ''; updateKeyDialogHint(); });
   document.getElementById('keySave').addEventListener('click', () => {
+    const name = document.getElementById('providerSelect').value;
     const value = document.getElementById('apiKeyInput').value.trim();
-    if (value) { apiKey = value; localStorage.setItem(KEY_STORE, apiKey); }
+    if (value) { provider = name; localStorage.setItem(PROVIDER_KEY, provider); localStorage.setItem(KEY_STORES[name], value); }
     closeKeyDialog(); checkModels();
   });
   document.getElementById('apiKeyInput').addEventListener('keydown', (event) => {
@@ -218,15 +262,29 @@ function fillModelSelect(models, preferred, placeholder) {
 async function checkModels() {
   const label = document.getElementById('connectionText'); const dot = document.querySelector('.status-dot');
   if (STATIC_MODE) {
-    if (!apiKey) { label.textContent = 'وضع المتصفح — أضف مفتاح Mistral'; dot.classList.remove('online'); return fillModelSelect([], '', 'أضف مفتاحًا أولًا'); }
+    if (!provider) provider = getKey('gemini') ? 'gemini' : (getKey('mistral') ? 'mistral' : 'gemini');
+    if (!activeKey()) { label.textContent = `وضع المتصفح — أضف مفتاح ${provider === 'gemini' ? 'Gemini' : 'Mistral'}`; dot.classList.remove('online'); return fillModelSelect([], '', 'أضف مفتاحًا أولًا'); }
     try {
-      const response = await fetch(`${MISTRAL_BASE}/models`, { headers: { Authorization: `Bearer ${apiKey}` } });
-      if (!response.ok) throw new Error();
-      const data = await response.json(); const listed = (data.data ?? []).map((model) => model.id);
-      staticModels = MODEL_CHAIN.filter((model) => listed.includes(model));
-      label.textContent = staticModels.length ? 'وضع المتصفح — متصل' : 'لا نماذج محادثة متاحة';
-      dot.classList.toggle('online', staticModels.length > 0);
-      fillModelSelect(staticModels, chosenModel, 'لا نماذج');
+      if (provider === 'gemini') {
+        const response = await fetch(`${GEMINI_BASE}/models?key=${encodeURIComponent(activeKey())}&pageSize=100`);
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        staticModels = (data.models ?? [])
+          .filter((model) => (model.supportedGenerationMethods ?? []).includes('generateContent') && /gemini/.test(model.name ?? ''))
+          .map((model) => String(model.name).replace(/^models\//, ''));
+        staticModels.sort((a, b) => (a.includes('flash') === b.includes('flash') ? (a > b ? 1 : -1) : a.includes('flash') ? -1 : 1));
+        label.textContent = 'وضع المتصفح — متصل بـ Gemini';
+        dot.classList.toggle('online', staticModels.length > 0);
+        fillModelSelect(staticModels, chosenModel, 'لا نماذج');
+      } else {
+        const response = await fetch(`${MISTRAL_BASE}/models`, { headers: { Authorization: `Bearer ${activeKey()}` } });
+        if (!response.ok) throw new Error();
+        const data = await response.json(); const listed = (data.data ?? []).map((model) => model.id);
+        staticModels = MODEL_CHAIN.filter((model) => listed.includes(model));
+        label.textContent = staticModels.length ? 'وضع المتصفح — متصل بـ Mistral' : 'لا نماذج محادثة متاحة';
+        dot.classList.toggle('online', staticModels.length > 0);
+        fillModelSelect(staticModels, chosenModel, 'لا نماذج');
+      }
     } catch { label.textContent = 'المفتاح غير صالح أو الشبكة محجوبة'; dot.classList.remove('online'); }
     return;
   }
@@ -238,4 +296,4 @@ async function checkModels() {
 }
 initKeyDialog();
 renderSidebar(); renderMessages(); checkModels();
-if (STATIC_MODE && !apiKey) setTimeout(openKeyDialog, 400);
+if (STATIC_MODE && !activeKey()) setTimeout(openKeyDialog, 400);

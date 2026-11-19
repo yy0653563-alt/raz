@@ -30,3 +30,7 @@
 #keyCancel:hover{color:var(--white);border-color:#3a423c}
 #keySave{border:0;background:var(--green);color:#031108;font-weight:600}
 #keySave:hover{background:#4dff9d}
+.key-dialog select{width:100%;border:1px solid #252c27;background:#080a09;color:var(--white);border-radius:7px;padding:9px 12px;font:12px var(--font);outline:0;cursor:pointer;margin-bottom:10px}
+.key-dialog select:focus{border-color:#336344}
+.key-dialog select option{background:#0a0d0b}
+.key-dialog .key-actions{margin-top:10px}

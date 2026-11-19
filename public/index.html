@@ -66,8 +66,12 @@
   </div>
   <div class="key-overlay" id="keyOverlay" role="dialog" aria-modal="true" aria-labelledby="keyTitle">
     <div class="key-dialog">
-      <h2 id="keyTitle">مفتاح Mistral</h2>
-      <p>يُخزَّن المفتاح في متصفحك فقط ولا يُرسل إلى أي جهة غير Mistral. احصل عليه من <a href="https://console.mistral.ai/" target="_blank" rel="noopener">console.mistral.ai</a>.</p>
+      <h2 id="keyTitle">توصيل الذكاء الاصطناعي</h2>
+      <p id="keyHint">مفتاح مجاني بدون بطاقة من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. يُخزَّن في متصفحك فقط.</p>
+      <select id="providerSelect" aria-label="اختيار المزود">
+        <option value="gemini">Gemini من Google — مجاني</option>
+        <option value="mistral">Mistral — يتطلب خطة مفعّلة</option>
+      </select>
       <input type="password" id="apiKeyInput" placeholder="مفتاح API…" dir="ltr" autocomplete="off" spellcheck="false">
       <div class="key-actions">
         <button id="keyCancel" type="button">إلغاء</button>
