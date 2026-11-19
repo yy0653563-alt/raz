@@ -241,8 +241,22 @@ async function respond(chat) {
   try {
     if (STATIC_MODE) {
       answeredModel = chosenModel || staticModels[0] || (provider === 'gemini' ? 'gemini-2.5-flash' : 'mistral-small-latest');
-      if (provider === 'gemini') await streamGemini(activeKey(), answeredModel, history, message, controller.signal, bump);
-      else await streamMistral(activeKey(), answeredModel, history, message, controller.signal, bump);
+      if (provider === 'gemini') {
+        const attempt = async (modelName) => {
+          fullText = '';
+          if (assistant) { assistant.row.remove(); assistant = null; document.getElementById('typing')?.remove(); }
+          await streamGemini(activeKey(), modelName, history, message, controller.signal, bump);
+        };
+        try {
+          await attempt(answeredModel);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') throw error;
+          const fallbackModel = staticModels.find((m) => m !== answeredModel && m.includes('flash')) || staticModels.find((m) => m !== answeredModel);
+          if (!fallbackModel) throw error;
+          answeredModel = fallbackModel;
+          await attempt(fallbackModel);
+        }
+      } else await streamMistral(activeKey(), answeredModel, history, message, controller.signal, bump);
     } else {
       const response = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
@@ -355,8 +369,9 @@ async function checkModels() {
         const response = await fetch(`${GEMINI_BASE}/models?key=${encodeURIComponent(activeKey())}&pageSize=100`);
         if (!response.ok) throw new Error();
         const data = await response.json();
+        const badPattern = /computer-use|imagen|image-generation|tts|native-audio|live|veo|embedding|aqa|robotics/;
         staticModels = (data.models ?? [])
-          .filter((model) => (model.supportedGenerationMethods ?? []).includes('generateContent') && /gemini/.test(model.name ?? ''))
+          .filter((model) => (model.supportedGenerationMethods ?? []).includes('generateContent') && /gemini/.test(model.name ?? '') && !badPattern.test(model.name ?? ''))
           .map((model) => String(model.name).replace(/^models\//, ''));
         staticModels.sort((a, b) => (a.includes('flash') === b.includes('flash') ? (a > b ? 1 : -1) : a.includes('flash') ? -1 : 1));
         label.textContent = 'وضع المتصفح — متصل بـ Gemini';
