@@ -2,6 +2,7 @@
   "name": "raz-chat",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "راز — مساعد محادثة عربي مدعوم بنماذج Mistral",
   "scripts": {
     "dev": "tsx watch src/server.ts",
