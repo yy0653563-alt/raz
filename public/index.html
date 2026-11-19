@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="راز — مساحة محادثة ذكية وخاصة.">
+  <title>راز — مساحة تفكيرك</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <a class="brand" href="/" aria-label="راز، الرئيسية">
+          <svg class="brand-eye" viewBox="0 0 42 32" aria-hidden="true"><path d="M2 16C7.2 7.6 13.5 3.5 21 3.5S34.8 7.6 40 16c-5.2 8.4-11.5 12.5-19 12.5S7.2 24.4 2 16Z"/><path d="M21 7.8 29.2 16 21 24.2 12.8 16 21 7.8Z"/><circle cx="21" cy="16" r="3"/></svg>
+          <span>راز<span class="brand-period">.</span></span>
+        </a>
+        <button class="icon-button mobile-close" id="closeSidebar" aria-label="إغلاق القائمة">×</button>
+      </div>
+      <button class="new-chat" id="newChat"><span class="plus">＋</span> محادثة جديدة <kbd>⌘ K</kbd></button>
+      <div class="sidebar-label"><span>مساحتك</span><span class="tiny-line"></span></div>
+      <div class="conversation-list" id="conversationList"></div>
+      <div class="sidebar-bottom">
+        <div class="connection"><span class="status-dot"></span><span id="connectionText">جاري الاتصال</span></div>
+        <div class="side-foot"><span>خصوصيتك أولاً</span><span class="version">R / 01</span></div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim" id="scrim"></div>
+    <main class="main-panel">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="openSidebar" aria-label="فتح القائمة"><span></span><span></span></button>
+        <div class="top-brand"><span class="top-dot"></span> راز <span class="top-slash">/</span> مساحة تفكيرك</div>
+        <button class="model-pill" id="modelPill" title="النموذج الافتراضي"><span class="model-indicator"></span><span id="modelName">MISTRAL</span></button>
+      </header>
+      <section class="chat-scroll" id="chatScroll">
+        <div class="welcome" id="welcome">
+          <div class="welcome-mark"><svg viewBox="0 0 42 32" aria-hidden="true"><path d="M2 16C7.2 7.6 13.5 3.5 21 3.5S34.8 7.6 40 16c-5.2 8.4-11.5 12.5-19 12.5S7.2 24.4 2 16Z"/><path d="M21 7.8 29.2 16 21 24.2 12.8 16 21 7.8Z"/><circle cx="21" cy="16" r="3"/></svg></div>
+          <div class="eyebrow"><span></span> مساحة آمنة لأفكارك</div>
+          <h1>فكرتك تبدأ<br>من <em>هنا.</em></h1>
+          <p>اسأل، استكشف، أو ابدأ من حيث توقفت.<br>راز هنا ليساعدك على التفكير بشكل أعمق.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="ساعدني في ترتيب أفكاري لمشروع جديد"><span class="suggestion-icon">↗</span><span>رتّب أفكاري لمشروع جديد</span></button>
+            <button class="suggestion" data-prompt="اشرح لي فكرة معقدة بطريقة بسيطة"><span class="suggestion-icon">⌁</span><span>اشرح فكرة معقدة ببساطة</span></button>
+            <button class="suggestion" data-prompt="اقترح عليّ طريقة إبداعية للتعلّم"><span class="suggestion-icon">✳</span><span>افتح لي باباً للتعلّم</span></button>
+          </div>
+          <div class="welcome-foot"><span class="foot-rule"></span> فكّر بحرية <span class="foot-rule"></span></div>
+        </div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+      </section>
+      <footer class="composer-area">
+        <form class="composer" id="chatForm">
+          <textarea id="messageInput" rows="1" placeholder="اكتب ما يدور في ذهنك..." aria-label="رسالتك" maxlength="12000"></textarea>
+          <div class="composer-bottom">
+            <div class="composer-hint"><span class="hint-spark">✳</span> خذ وقتك، لا يوجد سؤال خاطئ</div>
+            <div class="send-group"><span class="char-count" id="charCount"></span><button class="send-button" id="sendButton" type="submit" aria-label="إرسال الرسالة"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button></div>
+          </div>
+        </form>
+        <div class="disclaimer">قد يخطئ راز أحياناً. تحقّق من المعلومات المهمة.</div>
+      </footer>
+    </main>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

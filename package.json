@@ -1,0 +1,22 @@
+{
+  "name": "raz-chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "راز — مساعد محادثة عربي مدعوم بنماذج Mistral",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@mistralai/mistralai": "^1.9.10",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.30",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
