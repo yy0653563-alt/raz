@@ -25,6 +25,7 @@
       <div class="sidebar-label"><span>مساحتك</span><span class="tiny-line"></span></div>
       <div class="conversation-list" id="conversationList"></div>
       <div class="sidebar-bottom">
+        <button class="key-edit" id="keyEdit" type="button">🔑 إدارة المفتاح</button>
         <div class="connection"><span class="status-dot"></span><span id="connectionText">جاري الاتصال</span></div>
         <div class="side-foot"><span>خصوصيتك أولاً</span><span class="version">R / 01</span></div>
       </div>
@@ -62,6 +63,17 @@
         <div class="disclaimer">قد يخطئ راز أحياناً. تحقّق من المعلومات المهمة.</div>
       </footer>
     </main>
+  </div>
+  <div class="key-overlay" id="keyOverlay" role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+    <div class="key-dialog">
+      <h2 id="keyTitle">مفتاح Mistral</h2>
+      <p>يُخزَّن المفتاح في متصفحك فقط ولا يُرسل إلى أي جهة غير Mistral. احصل عليه من <a href="https://console.mistral.ai/" target="_blank" rel="noopener">console.mistral.ai</a>.</p>
+      <input type="password" id="apiKeyInput" placeholder="مفتاح API…" dir="ltr" autocomplete="off" spellcheck="false">
+      <div class="key-actions">
+        <button id="keyCancel" type="button">إلغاء</button>
+        <button id="keySave" type="button">حفظ والاتصال</button>
+      </div>
+    </div>
   </div>
   <script src="/app.js" defer></script>
 </body>

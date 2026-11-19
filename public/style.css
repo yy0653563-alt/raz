@@ -13,3 +13,20 @@
 .send-button.stop{background:#e2af45;color:#231a02}
 .send-button.stop:hover{background:#ffcd6b;transform:translateY(-1px)}
 .send-button.stop svg{transform:rotate(90deg)}
+.key-edit{display:block;width:100%;border:1px solid #202722;background:none;color:#8b948c;font:11px var(--font);padding:7px 10px;border-radius:6px;cursor:pointer;text-align:right;transition:.15s;margin-bottom:10px}
+.key-edit:hover{color:#ccf7df;border-color:#244832}
+.key-overlay{display:none;position:fixed;inset:0;background:#000b;z-index:50;place-items:center;backdrop-filter:blur(4px)}
+.key-overlay.visible{display:grid}
+.key-dialog{width:min(430px,90vw);background:#0b0e0c;border:1px solid #244832;border-radius:10px;padding:22px;animation:rise .25s ease both}
+.key-dialog h2{margin:0 0 8px;font-size:17px;color:var(--white)}
+.key-dialog p{margin:0 0 14px;color:#838b85;font-size:11px;line-height:1.9}
+.key-dialog a{color:var(--green);text-decoration:none}
+.key-dialog a:hover{text-decoration:underline}
+.key-dialog input{width:100%;border:1px solid #252c27;background:#080a09;color:var(--white);border-radius:7px;padding:10px 12px;font:12px var(--mono);outline:0;transition:border-color .2s}
+.key-dialog input:focus{border-color:#336344}
+.key-actions{display:flex;gap:9px;justify-content:flex-start;margin-top:13px}
+.key-actions button{border-radius:6px;padding:7px 15px;font:12px var(--font);cursor:pointer;transition:.2s}
+#keyCancel{border:1px solid #232925;background:none;color:#9aa39b}
+#keyCancel:hover{color:var(--white);border-color:#3a423c}
+#keySave{border:0;background:var(--green);color:#031108;font-weight:600}
+#keySave:hover{background:#4dff9d}

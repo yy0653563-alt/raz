@@ -1,5 +1,9 @@
 const STORAGE_KEY = 'raz.conversations.v1';
 const MODEL_KEY = 'raz.model.v1';
+const KEY_STORE = 'raz.mistral.key.v1';
+const MISTRAL_BASE = 'https://api.mistral.ai/v1';
+const STATIC_MODE = /\.github\.io$/.test(location.hostname) || new URLSearchParams(location.search).has('static');
+const MODEL_CHAIN = ['mistral-small-latest', 'mistral-medium-latest', 'open-mistral-nemo', 'pixtral-12b-2409'];
 const listEl = document.getElementById('conversationList');
 const messagesEl = document.getElementById('messages');
 const welcomeEl = document.getElementById('welcome');
@@ -14,6 +18,8 @@ let activeId = null;
 let busy = false;
 let controller = null;
 let chosenModel = localStorage.getItem(MODEL_KEY) || '';
+let apiKey = localStorage.getItem(KEY_STORE) || '';
+let staticModels = [];
 
 function loadConversations() {
   try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(saved) ? saved : []; }
@@ -97,33 +103,63 @@ function ensureConversation(message) {
 }
 async function sendMessage(text) {
   const message = text.trim(); if (!message || busy) return;
+  if (STATIC_MODE && !apiKey) { openKeyDialog(); return; }
   const chat = ensureConversation(message);
   chat.messages.push({ role: 'user', content: message }); save(); renderSidebar(); renderMessages(); addTyping(); setBusy(true); input.value = ''; updateCount();
   const history = chat.messages.slice(0, -1).slice(-20).map(({ role, content }) => ({ role, content }));
   controller = new AbortController();
   let assistant = null; let fullText = ''; let answeredModel = '';
+  const bump = (chunk) => { fullText += chunk; assistant.bubble.textContent = fullText; scrollBottom(); };
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-      body: JSON.stringify({ message, history, model: chosenModel || undefined }),
-    });
-    if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'تعذّر إرسال رسالتك.'); }
-    if (!response.body) throw new Error('الاتصال المباشر غير متاح في هذا المتصفح.');
-    document.getElementById('typing')?.remove();
-    assistant = addMessage('assistant', '');
-    const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
-    while (true) {
-      const { value, done } = await reader.read(); if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split('\n\n'); buffer = events.pop() || '';
-      for (const block of events) {
-        const eventName = block.split('\n').find((line) => line.startsWith('event:'))?.slice(6).trim();
-        const dataLine = block.split('\n').find((line) => line.startsWith('data:'));
-        if (!dataLine) continue;
-        const data = JSON.parse(dataLine.slice(5).trim());
-        if (eventName === 'model') answeredModel = data.model;
-        if (eventName === 'token') { fullText += data.content; assistant.bubble.textContent = fullText; scrollBottom(); }
-        if (eventName === 'error') throw new Error(data.error || 'حدث خطأ أثناء الرد.');
+    if (STATIC_MODE) {
+      answeredModel = chosenModel || staticModels[0] || 'mistral-small-latest';
+      document.getElementById('typing')?.remove();
+      assistant = addMessage('assistant', '');
+      const response = await fetch(`${MISTRAL_BASE}/chat/completions`, {
+        method: 'POST', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: answeredModel, messages: [...history, { role: 'user', content: message }], stream: true }),
+      });
+      if (!response.ok) {
+        const reason = response.status === 401 ? 'مفتاح Mistral غير صالح. تحقّق منه ثم أعده الإدخال.'
+          : response.status === 429 ? 'تجاوزت حد الاستخدام مؤقتًا. حاول بعد قليل.'
+          : 'تعذّر الاتصال بخدمة Mistral. حاول مجددًا.';
+        throw new Error(reason);
+      }
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read(); if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n'); buffer = lines.pop() || '';
+        for (const line of lines) {
+          const trimmed = line.trim(); if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim(); if (payload === '[DONE]') continue;
+          try { const delta = JSON.parse(payload).choices?.[0]?.delta?.content; if (typeof delta === 'string' && delta) bump(delta); } catch { /* تجاهل الأجزاء غير المكتملة */ }
+        }
+      }
+    } else {
+      const response = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+        body: JSON.stringify({ message, history, model: chosenModel || undefined }),
+      });
+      if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'تعذّر إرسال رسالتك.'); }
+      if (!response.body) throw new Error('الاتصال المباشر غير متاح في هذا المتصفح.');
+      document.getElementById('typing')?.remove();
+      assistant = addMessage('assistant', '');
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read(); if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n'); buffer = events.pop() || '';
+        for (const block of events) {
+          const eventName = block.split('\n').find((line) => line.startsWith('event:'))?.slice(6).trim();
+          const dataLine = block.split('\n').find((line) => line.startsWith('data:'));
+          if (!dataLine) continue;
+          const data = JSON.parse(dataLine.slice(5).trim());
+          if (eventName === 'model') answeredModel = data.model;
+          if (eventName === 'token') bump(data.content);
+          if (eventName === 'error') throw new Error(data.error || 'حدث خطأ أثناء الرد.');
+        }
       }
     }
     if (!fullText) throw new Error('لم يصل أي رد. حاول مرة أخرى.');
@@ -144,6 +180,23 @@ async function sendMessage(text) {
 }
 function updateCount() { countEl.textContent = input.value.length > 0 ? `${input.value.length}/12000` : ''; }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('scrim').classList.remove('visible'); }
+function openKeyDialog() { const overlay = document.getElementById('keyOverlay'); const field = document.getElementById('apiKeyInput'); field.value = apiKey; overlay.classList.add('visible'); field.focus(); }
+function closeKeyDialog() { document.getElementById('keyOverlay').classList.remove('visible'); }
+function initKeyDialog() {
+  if (!STATIC_MODE) { document.getElementById('keyEdit').hidden = true; return; }
+  document.getElementById('keyEdit').addEventListener('click', openKeyDialog);
+  document.getElementById('keyCancel').addEventListener('click', closeKeyDialog);
+  document.getElementById('keyOverlay').addEventListener('click', (event) => { if (event.target.id === 'keyOverlay') closeKeyDialog(); });
+  document.getElementById('keySave').addEventListener('click', () => {
+    const value = document.getElementById('apiKeyInput').value.trim();
+    if (value) { apiKey = value; localStorage.setItem(KEY_STORE, apiKey); }
+    closeKeyDialog(); checkModels();
+  });
+  document.getElementById('apiKeyInput').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') { event.preventDefault(); document.getElementById('keySave').click(); }
+    if (event.key === 'Escape') closeKeyDialog();
+  });
+}
 document.getElementById('newChat').addEventListener('click', startNewChat);
 document.getElementById('openSidebar').addEventListener('click', () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('visible'); });
 document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
@@ -155,16 +208,34 @@ input.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !eve
 document.querySelectorAll('.suggestion').forEach((button) => button.addEventListener('click', () => sendMessage(button.dataset.prompt || '')));
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); startNewChat(); } });
 modelSelect.addEventListener('change', () => { chosenModel = modelSelect.value; localStorage.setItem(MODEL_KEY, chosenModel); });
+function fillModelSelect(models, preferred, placeholder) {
+  modelSelect.replaceChildren();
+  if (!models.length) { const option = document.createElement('option'); option.value = ''; option.textContent = placeholder; modelSelect.append(option); return; }
+  models.forEach((model) => { const option = document.createElement('option'); option.value = model; option.textContent = model; modelSelect.append(option); });
+  const chosen = models.includes(preferred) ? preferred : models[0];
+  modelSelect.value = chosen; chosenModel = chosen; localStorage.setItem(MODEL_KEY, chosenModel);
+}
 async function checkModels() {
   const label = document.getElementById('connectionText'); const dot = document.querySelector('.status-dot');
+  if (STATIC_MODE) {
+    if (!apiKey) { label.textContent = 'وضع المتصفح — أضف مفتاح Mistral'; dot.classList.remove('online'); return fillModelSelect([], '', 'أضف مفتاحًا أولًا'); }
+    try {
+      const response = await fetch(`${MISTRAL_BASE}/models`, { headers: { Authorization: `Bearer ${apiKey}` } });
+      if (!response.ok) throw new Error();
+      const data = await response.json(); const listed = (data.data ?? []).map((model) => model.id);
+      staticModels = MODEL_CHAIN.filter((model) => listed.includes(model));
+      label.textContent = staticModels.length ? 'وضع المتصفح — متصل' : 'لا نماذج محادثة متاحة';
+      dot.classList.toggle('online', staticModels.length > 0);
+      fillModelSelect(staticModels, chosenModel, 'لا نماذج');
+    } catch { label.textContent = 'المفتاح غير صالح أو الشبكة محجوبة'; dot.classList.remove('online'); }
+    return;
+  }
   try {
     const response = await fetch('/api/models'); const data = await response.json(); if (!response.ok) throw new Error(data.error);
     label.textContent = data.available.length ? 'متصل بالنماذج' : 'لا توجد نماذج متاحة'; dot.classList.toggle('online', data.available.length > 0);
-    modelSelect.replaceChildren();
-    if (!data.available.length) { const option = document.createElement('option'); option.value = ''; option.textContent = 'لا نماذج متاحة'; modelSelect.append(option); return; }
-    data.available.forEach((model) => { const option = document.createElement('option'); option.value = model; option.textContent = model; modelSelect.append(option); });
-    const preferred = data.available.includes(chosenModel) ? chosenModel : (data.default || data.available[0]);
-    modelSelect.value = preferred; chosenModel = preferred; localStorage.setItem(MODEL_KEY, chosenModel);
+    fillModelSelect(data.available, data.available.includes(chosenModel) ? chosenModel : (data.default || ''), 'لا نماذج متاحة');
   } catch { label.textContent = 'تحقّق من إعدادات الاتصال'; dot.classList.remove('online'); }
 }
+initKeyDialog();
 renderSidebar(); renderMessages(); checkModels();
+if (STATIC_MODE && !apiKey) setTimeout(openKeyDialog, 400);

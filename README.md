@@ -27,11 +27,19 @@ npm run build
 npm start
 ```
 
+## النشر على GitHub Pages (بدون خادم)
+
+يعمل التطبيق أيضًا كصفحة ثابتة على GitHub Pages بوضع المتصفح: تُستدعى نماذج Mistral مباشرة من متصفحك بمفتاح تدخله مرة واحدة.
+
+- يُنشر تلقائيًا مع كل دمج في `main` عبر `.github/workflows/pages.yml`، والرابط: `https://<user>.github.io/raz/`
+- يُخزَّن المفتاح في `localStorage` داخل متصفحك فقط، ولا يوضع في المستودع إطلاقًا
+- لفرض وضع المتصفح محليًا أرفق `?static` للرابط
+
 ## النشر على Render
 
 1. ادفع هذا المستودع إلى GitHub وأنشئ خدمة **Web Service** جديدة في [Render](https://render.com/).
-2. اربط مستودع GitHub وحدد الفرع `main`.
-3. استخدم الإعدادات التالية:
+2. اربط مستودع GitHub وحدد الفرع `main`. ملف `render.yaml` يحدد الإعدادات تلقائيًا.
+3. استخدم الإعدادات التالية إن كان الضبط يدويًا:
    - **Runtime:** Node
    - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
