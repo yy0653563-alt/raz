@@ -212,26 +212,32 @@ function updateCount() { countEl.textContent = input.value.length > 0 ? `${input
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('scrim').classList.remove('visible'); }
 function openKeyDialog() {
   const overlay = document.getElementById('keyOverlay');
-  document.getElementById('providerSelect').value = provider || 'gemini';
+  const providerSelect = document.getElementById('providerSelect');
+  if (providerSelect) providerSelect.value = provider || 'gemini';
+  else if (provider && getKey(provider) === '') provider = getKey('gemini') ? 'gemini' : 'mistral';
   document.getElementById('apiKeyInput').value = activeKey();
   updateKeyDialogHint();
   overlay.classList.add('visible'); document.getElementById('apiKeyInput').focus();
 }
 function closeKeyDialog() { document.getElementById('keyOverlay').classList.remove('visible'); }
 function updateKeyDialogHint() {
-  const name = document.getElementById('providerSelect').value;
+  const name = document.getElementById('providerSelect')?.value || provider || 'gemini';
   const hint = document.getElementById('keyHint');
   if (name === 'gemini') hint.innerHTML = 'مفتاح مجاني بدون بطاقة من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. يُخزَّن في متصفحك فقط.';
   else hint.innerHTML = 'يتطلب خطة Mistral مفعّلة. احصل عليه من <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener">console.mistral.ai</a>. يُخزَّن في متصفحك فقط.';
 }
 function initKeyDialog() {
-  if (!STATIC_MODE) { document.getElementById('keyEdit').hidden = true; return; }
-  document.getElementById('keyEdit').addEventListener('click', openKeyDialog);
+  const keyTop = document.getElementById('keyTop');
+  if (keyTop) keyTop.addEventListener('click', openKeyDialog);
+  if (!STATIC_MODE) { if (keyTop) keyTop.hidden = true; const ke = document.getElementById('keyEdit'); if (ke) ke.hidden = true; return; }
+  const keyEdit = document.getElementById('keyEdit');
+  if (keyEdit) keyEdit.addEventListener('click', openKeyDialog);
   document.getElementById('keyCancel').addEventListener('click', closeKeyDialog);
   document.getElementById('keyOverlay').addEventListener('click', (event) => { if (event.target.id === 'keyOverlay') closeKeyDialog(); });
-  document.getElementById('providerSelect').addEventListener('change', () => { document.getElementById('apiKeyInput').value = getKey(document.getElementById('providerSelect').value) || ''; updateKeyDialogHint(); });
+  const ps = document.getElementById('providerSelect');
+  if (ps) ps.addEventListener('change', () => { document.getElementById('apiKeyInput').value = getKey(ps.value) || ''; updateKeyDialogHint(); });
   document.getElementById('keySave').addEventListener('click', () => {
-    const name = document.getElementById('providerSelect').value;
+    const name = (document.getElementById('providerSelect')?.value) || provider || 'gemini';
     const value = document.getElementById('apiKeyInput').value.trim();
     if (value) { provider = name; localStorage.setItem(PROVIDER_KEY, provider); localStorage.setItem(KEY_STORES[name], value); }
     closeKeyDialog(); checkModels();

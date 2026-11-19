@@ -34,3 +34,27 @@
 .key-dialog select:focus{border-color:#336344}
 .key-dialog select option{background:#0a0d0b}
 .key-dialog .key-actions{margin-top:10px}
+/* ===== رفع بصري كامل (v4) ===== */
+body{background:radial-gradient(1200px 700px at 85% -10%,rgba(0,230,118,.09),transparent 60%),radial-gradient(1000px 600px at 0% 110%,rgba(64,140,255,.06),transparent 55%),var(--bg);}
+.topbar{background:rgba(5,6,5,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.065)}
+.top-brand{font-weight:600;letter-spacing:.03em}
+.key-top{border:1px solid #22352a;background:linear-gradient(180deg,rgba(0,230,118,.12),rgba(0,230,118,.04));border-radius:7px;padding:6px 11px;font-size:14px;cursor:pointer;transition:.2s;line-height:1}
+.key-top:hover{border-color:var(--green);box-shadow:0 0 14px rgba(0,230,118,.25);transform:translateY(-1px)}
+.brand-eye{filter:drop-shadow(0 0 6px rgba(0,230,118,.55));animation:brandGlow 3.2s ease-in-out infinite}
+@keyframes brandGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(0,230,118,.4))}50%{filter:drop-shadow(0 0 13px rgba(0,230,118,.75))}}
+.welcome-mark svg{animation:brandGlow 3.2s ease-in-out infinite}
+h1{background:linear-gradient(180deg,#ffffff 30%,#bfe9d0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+h1 em{-webkit-text-fill-color:var(--green);font-weight:700}
+.suggestion{background:linear-gradient(180deg,#0d110e,#0a0d0b);border:1px solid #1d2620;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.suggestion:hover{border-color:#2f7a4d;box-shadow:0 10px 26px rgba(0,230,118,.14),0 2px 8px rgba(0,0,0,.4);transform:translateY(-3px)}
+.message-row.user .bubble{background:linear-gradient(180deg,#12291c,#0f2218);border-color:#235c38;border-radius:14px 14px 5px 14px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.message-row.assistant .bubble{background:linear-gradient(180deg,#0d1210,#0a0e0c);border-color:#1c241f;border-radius:14px 14px 14px 5px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.avatar{box-shadow:0 0 12px rgba(0,230,118,.14);border-radius:8px}
+.composer{background:linear-gradient(180deg,#0d100e,#0a0d0b);border-radius:12px;border:1px solid #263029;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.composer:focus-within{border-color:#3a8357;box-shadow:0 0 0 3px rgba(0,230,118,.09),0 14px 40px rgba(0,0,0,.45)}
+.send-button{background:linear-gradient(180deg,#26f386,#00d366);box-shadow:0 4px 16px rgba(0,230,118,.35);border-radius:8px}
+.send-button:hover{box-shadow:0 6px 22px rgba(0,230,118,.5)}
+.new-chat{background:linear-gradient(180deg,rgba(0,230,118,.1),rgba(0,230,118,.03));border-radius:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.model-pill{border-radius:8px}
+.chat-scroll{scroll-behavior:smooth}
+::selection{background:rgba(0,230,118,.3)}
